@@ -1,0 +1,17 @@
+--extra-index-url https://download.pytorch.org/whl/cu118
+
+numpy
+requests
+tqdm
+roman
+beautifulsoup4
+EbookLib
+
+torch
+torchvision
+torchaudio
+
+spacy
+spacy-transformers
+spacy_download
+langdetect
