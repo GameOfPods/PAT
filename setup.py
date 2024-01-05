@@ -4,7 +4,7 @@ import os
 with open(os.path.join(os.path.dirname(__file__), "PAT", "version.txt"), "r", encoding="utf-8") as fv:
     __version__ = fv.read().strip()
 
-with open("README.rst", "r", encoding="utf-8") as fd:
+with open("README.md", "r", encoding="utf-8") as fd:
     long_description = fd.read()
 
 with open("requirements.txt", "r", encoding="utf-8") as fr:
