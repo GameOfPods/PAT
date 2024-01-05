@@ -21,14 +21,8 @@ def main():
     parser.add_argument("-ls", dest="ls", action="store_true", help="list all loaded modules and exit")
     parser.add_argument("input", help="input files you want to process", nargs="?", default=[])
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", help="More verbose")
-    parser.add_argument("--license", dest="license", action="store_true", help="Show license information")
 
     args = parser.parse_args()
-
-    if args.license:
-        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "LICENSE"), "r") as f:
-            print(f.read())
-        exit()
 
     if args.ls:
         sub_classes = [(x.name(), x.description()) for x in Module.__subclasses__()]

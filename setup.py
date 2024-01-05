@@ -8,7 +8,15 @@ with open("README.md", "r", encoding="utf-8") as fd:
     long_description = fd.read()
 
 with open("requirements.txt", "r", encoding="utf-8") as fr:
-    requirements = [x.strip() for x in fr.readlines() if len(x.strip()) > 0]
+    requirements = []
+    extra_dependency_links = []
+    for line in (x.strip() for x in fr.readlines() if len(x.strip()) > 0):
+        if line.startswith("--extra-index-url"):
+            extra_dependency_links.append(line[len("--extra-index-url"):].strip())
+        else:
+            requirements.append(line)
+
+print(requirements, extra_dependency_links)
 
 setuptools.setup(
     name="PAT",
@@ -38,9 +46,10 @@ setuptools.setup(
             'PAT = PAT.__main__:main',
         ],
     },
-    packages=setuptools.find_packages(include=['PAT', 'PAT.*']) + ["LICENSE", "README.md"],
+    packages=setuptools.find_packages(include=['PAT', 'PAT.*']),
     python_requires=">=3.7",
     install_requires=requirements,
-    requires=requirements,
+    dependency_links=extra_dependency_links + ['https://pypi.example.org/pypi/somedep/'],
     include_package_data=True,
+    zip_safe=False,
 )
