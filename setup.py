@@ -38,7 +38,7 @@ setuptools.setup(
             'PAT = PAT.__main__:main',
         ],
     },
-    packages=setuptools.find_packages(include=['PAT', 'PAT.*']),
+    packages=setuptools.find_packages(include=['PAT', 'PAT.*']) + ["LICENSE", "README.md"],
     python_requires=">=3.7",
     install_requires=requirements,
     requires=requirements,
