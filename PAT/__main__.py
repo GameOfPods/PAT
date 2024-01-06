@@ -1,12 +1,22 @@
-import os.path
+#  PAT - Toolkit to analyze podcast audio and topics talked about in the podcast. For example Books
+#  Copyright (c) 2024.  RedRem95
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+
 import glob
+import logging
+import os.path
 import sys
 from argparse import ArgumentParser
-from multiprocessing import Pool, cpu_count
-from typing import List, Tuple, Callable, Type, Optional
-import logging
-
-from tqdm import tqdm
+from typing import List, Tuple, Type, Optional
 
 from PAT import Module, __version__
 
@@ -19,7 +29,7 @@ def main():
 
     parser.add_argument("-V", "--version", action="version", version=f'%(prog)s {__version__}')
     parser.add_argument("-ls", dest="ls", action="store_true", help="list all loaded modules and exit")
-    parser.add_argument("input", help="input files you want to process", nargs="*", default=[])
+    parser.add_argument("input", help="input files you want to process", nargs="*", default=list())
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", help="More verbose")
 
     args = parser.parse_args()
