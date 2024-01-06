@@ -3,7 +3,7 @@ import glob
 import sys
 from argparse import ArgumentParser
 from multiprocessing import Pool, cpu_count
-from typing import List, Tuple, Callable, Type
+from typing import List, Tuple, Callable, Type, Optional
 import logging
 
 from tqdm import tqdm
@@ -46,11 +46,11 @@ def main():
 
     in_files = set()
     for in_file in args.input:
-        in_files.update((x for x in glob.glob(in_file) if os.path.exists(x)))
+        in_files.update((x for x in (os.path.abspath(y) for y in glob.glob(in_file)) if os.path.exists(x)))
 
     print(f"Processing {len(in_files)} files")
 
-    for in_file in in_files:
+    for in_file in sorted(in_files):
         in_file_path = os.path.abspath(in_file)
         in_file_name = os.path.basename(in_file)
         acc_module = [x for x in modules if x.supports_file(file=in_file)]
@@ -58,12 +58,21 @@ def main():
         for m in acc_module:
             tasks.append((m, (in_file_path, )))
 
+    tasks.sort(key=lambda x: (x[0].name(), x[0].__name__))
+
     print(f"Executing {len(tasks)} tasks")
 
+    prev_module: Optional[Type[Module]] = None
+
     for i, (m, args) in enumerate(tasks):
+        if prev_module != m:
+            if prev_module is not None:
+                prev_module.unload()
+            m.load()
         print(f"{i+1:{len(str(len(tasks)))}}/{len(tasks)}: Executing task {m.name()} on \"{args[0]}\"")
         module_instance = m(*args)
         module_instance.process()
+        prev_module = m
 
 
 if __name__ == "__main__":

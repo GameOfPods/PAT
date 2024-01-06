@@ -19,7 +19,6 @@ class BookModule(Module):
         from ebooklib import epub, ITEM_DOCUMENT, ITEM_NAVIGATION
         from langdetect import detect
         from bs4 import BeautifulSoup
-        import spacy
         from spacy_download import load_spacy
 
         book = epub.read_epub(self.file, options={"ignore_ncx": True})
@@ -56,6 +55,9 @@ class BookModule(Module):
         try:
             from ebooklib import epub
             import bs4
+            import spacy
+            from langdetect import detect
+            from spacy_download import load_spacy
             try:
                 epub.read_epub(file, options={"ignore_ncx": True})
                 return True
@@ -106,7 +108,7 @@ class BookModule(Module):
                 for ent in doc.ents:
                     lbl = ent.label_.lower()
                     lbl = {"per": "person"}.get(lbl, lbl)
-                    ent_identifier = ent.text if lbl == "person" else ent.lemma_
+                    ent_identifier = " ".join(x.capitalize() for x in ent.text.split(" ")) if lbl == "person" else ent.lemma_
                     chapter_info["entities"][lbl][ent_identifier] += 1
 
                 infos.append(chapter_info)

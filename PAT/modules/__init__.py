@@ -29,6 +29,16 @@ class Module(ABC):
     def process(self):
         pass
 
+    @classmethod
+    def load(cls):
+        print(f"First run of {cls.name()}")
+        pass
+
+    @classmethod
+    def unload(cls):
+        print(f"No run of {cls.name()} anymore")
+        pass
+
 
 __all__ = ["Module"]
 _my_path = os.path.dirname(__file__)
