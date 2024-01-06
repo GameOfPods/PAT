@@ -19,7 +19,7 @@ def main():
 
     parser.add_argument("-V", "--version", action="version", version=f'%(prog)s {__version__}')
     parser.add_argument("-ls", dest="ls", action="store_true", help="list all loaded modules and exit")
-    parser.add_argument("input", help="input files you want to process", nargs="?", default=[])
+    parser.add_argument("input", help="input files you want to process", nargs="*", default=[])
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", help="More verbose")
 
     args = parser.parse_args()
