@@ -20,6 +20,16 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 import os
 
 
@@ -149,7 +159,7 @@ def main(
     callbacks = [RichProgressBar(), DeviceStatsMonitor(cpu_stats=True), checkpoint, early_stopping]
     tb_logger: pl_loggers.Logger = pl_loggers.TensorBoardLogger(save_dir=os.path.join(target_folder, "tb_logs"))
     trainer = pl.Trainer(
-        accelerator="gpu", callbacks=callbacks, max_epochs=epochs, gradient_clip_val=0.5, devices=1, logger=[tb_logger]
+        accelerator="auto", callbacks=callbacks, max_epochs=epochs, gradient_clip_val=0.5, devices=1, logger=[tb_logger]
     )
     t2 = perf_counter()
     trainer.fit(model)
