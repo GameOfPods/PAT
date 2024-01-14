@@ -3,13 +3,18 @@
 numpy
 requests
 tqdm
+psutil
 roman
 beautifulsoup4
 EbookLib
+pyyaml
+scikit-learn
 
 torch
 torchvision
 torchaudio
+pyannote.audio
+audiosegment
 
 spacy
 spacy-transformers

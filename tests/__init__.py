@@ -20,11 +20,3 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-
-from .modules import *
-
-__author__ = 'RedRem95'
-with open(os.path.join(os.path.dirname(__file__), 'version.txt'), 'r') as fv:
-    __version__ = fv.read().strip()
-
-del os

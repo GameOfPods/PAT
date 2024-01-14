@@ -10,6 +10,16 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 
 import glob
 import logging
@@ -54,9 +64,13 @@ def main():
 
     modules = Module.__subclasses__()
 
-    in_files = set()
+    in_files = []
     for in_file in args.input:
-        in_files.update((x for x in (os.path.abspath(y) for y in glob.glob(in_file)) if os.path.exists(x)))
+        in_files.extend((x for x in (os.path.abspath(y) for y in glob.glob(in_file)) if os.path.exists(x)))
+
+    for i in range(len(in_files) - 1, 0, -1):
+        if in_files[i] in in_files[0:i]:
+            in_files.pop(i)
 
     print(f"Processing {len(in_files)} files")
 
