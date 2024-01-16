@@ -20,7 +20,19 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+import json
 import logging
+from typing import Dict, Any, Optional, Tuple, Callable, Union
 
 from PAT.modules import Module
 
@@ -32,7 +44,7 @@ class SpeakerDetectionModule(Module):
     def __init__(self, file: str):
         super().__init__(file)
         if self.__class__._PIPELINE is None:
-            self.load()
+            raise ValueError(f"{self.__class__.name()} did not get a load call to prepare pipeline")
 
     @classmethod
     def supports_file(cls, file: str) -> bool:
@@ -79,28 +91,54 @@ class SpeakerDetectionModule(Module):
                 os.path.join("G:\\tmp", f"{label}-{speaker_counts[label]}.mp3")
             )
 
-        self._LOGGER.debug(
+        self._LOGGER.info(
             f"Speaker presence: {', '.join(str(x) for x in sorted(speaker_counts.items(), key=lambda x: x[::-1], reverse=True))}")
 
         exit(1)
 
     @classmethod
-    def load(cls):
-        super().load()
+    def load(cls, config: Dict[str, Any]):
+        super().load(config=config)
+        model_path: Optional[str] = config.get("model_path", None)
+        optimized_data: Optional[str] = config.get("optimized_data", None)
         if cls._PIPELINE is None:
             import torch
             from pyannote.audio import Pipeline
             import os
+
             checkpoint = os.environ.get("PYANNOTE_PIPELINE", "pyannote/speaker-diarization-3.1").strip()
             auth_token = os.environ.get("HUGGINGFACE_ACCESS_TOKEN", None)
+
             cls._LOGGER.info(f"Loading Pipeline {checkpoint} {'without' if auth_token is None else 'with'} auth token")
             cls._PIPELINE = Pipeline.from_pretrained(checkpoint_path=checkpoint, use_auth_token=auth_token)
+            if model_path is not None:
+                from pyannote.audio.pipelines import SpeakerDiarization
+                cls._LOGGER.info(f"Will construct pipeline using \"{model_path}\" as segmentation model")
+                cls._PIPELINE = SpeakerDiarization(
+                    segmentation=model_path,
+                    embedding=cls._PIPELINE.embedding,
+                    embedding_exclude_overlap=cls._PIPELINE.embedding_exclude_overlap,
+                    clustering=cls._PIPELINE.klustering,
+                )
+
+                if optimized_data is not None:
+                    cls._LOGGER.info(f"Will instantiate pipeline using optimized data from \"{model_path}\"")
+                    with open(optimized_data, "r") as f:
+                        cls._PIPELINE = cls._PIPELINE.instantiate(json.load(f))
+
             if torch.cuda.is_available():
                 dev = torch.device("cuda")
             else:
                 dev = torch.device("cpu")
-            cls._PIPELINE.to(dev)
-            cls._LOGGER.info(f"Pipeline loaded and moved to {dev}")
+            cls._PIPELINE = cls._PIPELINE.to(dev)
+            cls._LOGGER.info(f"Pipeline loaded and moved to {cls._PIPELINE.device}")
+
+    @classmethod
+    def config_keys(cls) -> Dict[str, Tuple[Callable[[str], Any], bool, str, Union[None, str, int]]]:
+        return {
+            "model_path": (str, False, "Set path to custom trained segmentation model", None),
+            "optimized_data": (str, False, "Set path to optimized data to instantiate pipeline", None)
+        }
 
     @classmethod
     def unload(cls):

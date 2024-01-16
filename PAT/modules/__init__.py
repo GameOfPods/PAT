@@ -30,9 +30,20 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 
 import os
 from abc import ABC, abstractmethod
+from typing import Any, Callable, Tuple, Dict, Union
 
 
 class Module(ABC):
@@ -62,7 +73,7 @@ class Module(ABC):
         pass
 
     @classmethod
-    def load(cls):
+    def load(cls, config: Dict[str, Any]):
         print(f"First run of {cls.name()}")
         pass
 
@@ -70,6 +81,10 @@ class Module(ABC):
     def unload(cls):
         print(f"No run of {cls.name()} anymore")
         pass
+
+    @classmethod
+    def config_keys(cls) -> Dict[str, Tuple[Callable[[str], Any], bool, str, Union[None, str, int]]]:
+        return dict()
 
 
 __all__ = ["Module"]
