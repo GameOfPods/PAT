@@ -30,6 +30,16 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 import os
 
 
@@ -41,7 +51,10 @@ def main(
         diarization_pipe: str,
         segmentation_model: str,
         epochs: int,
+        batch_size: int,
         optim_iters: int = None,
+        model_duration: int = None,
+        num_workers: int = None,
 ):
     if optim_iters is None:
         optim_iters = epochs
@@ -118,6 +131,7 @@ def main(
         metric_p(file["annotation"], file["pretrained pipeline"], uem=file["annotated"])
         if i >= test_size:
             break
+        break
 
     print(f"The pretrained pipeline reaches a Diarization Error Rate (DER) of {100 * abs(metric_p):.1f}% on test set.")
 
@@ -126,10 +140,10 @@ def main(
     model = Model.from_pretrained(segmentation_model, use_auth_token=auth_token)
     task = Segmentation(
         protocol_data,
-        duration=model.specifications.duration,
+        duration=model.specifications.duration if model_duration is None else model_duration,
         max_num_speakers=len(model.specifications.classes),
-        batch_size=32,
-        num_workers=None,
+        batch_size=batch_size,
+        num_workers=num_workers,
         pin_memory=True,
         loss="bce",
         vad_loss="bce")
@@ -255,7 +269,7 @@ def main(
             "threshold": best_clustering_threshold,
         },
     }
-    finetuned_pipeline.instantiate(optimized_data)
+    finetuned_pipeline = finetuned_pipeline.instantiate(optimized_data)
 
     optimized_data_path = os.path.join(target_folder, "optimized_data.json")
     with open(optimized_data_path, "w") as f_out:
@@ -278,6 +292,8 @@ def main(
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
+    from multiprocessing import cpu_count
+    from math import ceil
 
     parser = ArgumentParser(description="Train speaker diarization model")
     parser.add_argument("-t", "--target", type=str, required=True, dest="target", help="target chkp file")
@@ -288,8 +304,13 @@ if __name__ == '__main__':
                         help="Diarization pipeline")
     parser.add_argument("--segmentation_model", default="pyannote/segmentation", dest="segmentation",
                         help="Segmentation model")
-    parser.add_argument("--epochs", default=50, dest="epochs", type=int, help="Number of epochs")
+    parser.add_argument("--epochs", default=50, dest="epochs", type=int, help="Number of epochs [Default: %(default)s]")
     parser.add_argument("--optim-steps", default=None, type=int, dest="optim_steps", help="optimization steps")
+    parser.add_argument("--model-duration", default=None, type=int, dest="model_duration", help="model duration")
+    parser.add_argument("--num-workers", default=ceil(cpu_count() / 2), type=int, dest="num_workers",
+                        help="Amount of training workers [Default: %(default)s]")
+    parser.add_argument("--batch-size", default=32, type=int, dest="batch_size",
+                        help="Batchsize [Default: %(default)s]")
 
     args = parser.parse_args()
 
@@ -302,4 +323,7 @@ if __name__ == '__main__':
         segmentation_model=args.segmentation,
         epochs=args.epochs,
         optim_iters=args.optim_steps,
+        model_duration=args.model_duration,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
     )
