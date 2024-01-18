@@ -40,6 +40,16 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 import os
 
 
@@ -119,8 +129,6 @@ def main(
         print(e)
         exit(1)
 
-    test_size = test_size // 5
-
     print(f"Loading pretrained pipeline {diarization_pipe}")
     auth_token = os.environ.get("HUGGINGFACE_ACCESS_TOKEN", None)
     pretrained_pipeline = Pipeline.from_pretrained(diarization_pipe, use_auth_token=auth_token)
@@ -131,7 +139,6 @@ def main(
         metric_p(file["annotation"], file["pretrained pipeline"], uem=file["annotated"])
         if i >= test_size:
             break
-        break
 
     print(f"The pretrained pipeline reaches a Diarization Error Rate (DER) of {100 * abs(metric_p):.1f}% on test set.")
 
@@ -287,7 +294,8 @@ def main(
     print(f"The finetuned pipeline reaches a Diarization Error Rate (DER) of {100 * abs(metric_f):.1f}% on test set.")
     print("vs")
     print(f"The pretrained pipeline reaches a Diarization Error Rate (DER) of {100 * abs(metric_p):.1f}% on test set.")
-    print(f"Important files: Best model is \"{best_model}\"; Optimized data is \"{optimized_data_path}")
+    print(f"Important files: Best model is \"{best_model}\" from \"{checkpoint.best_model_path}\"")
+    print(f"Optimized data is \"{optimized_data_path}")
 
 
 if __name__ == '__main__':
@@ -298,15 +306,18 @@ if __name__ == '__main__':
     parser = ArgumentParser(description="Train speaker diarization model")
     parser.add_argument("-t", "--target", type=str, required=True, dest="target", help="target chkp file")
     parser.add_argument("-p", "--path", default=None, dest="path", help="Path to the database file")
-    parser.add_argument("--database", default="PodcastDatabase", dest="database", help="Database name")
-    parser.add_argument("--protocol", default="Protocol", dest="protocol", help="Protocol name")
+    parser.add_argument("--database", default="PodcastDatabase", dest="database",
+                        help="Database name [Default: %(default)s]")
+    parser.add_argument("--protocol", default="Protocol", dest="protocol", help="Protocol name [Default: %(default)s]")
     parser.add_argument("--diarization_pipeline", default="pyannote/speaker-diarization-3.1", dest="diarization",
-                        help="Diarization pipeline")
+                        help="Diarization pipeline [Default: %(default)s]")
     parser.add_argument("--segmentation_model", default="pyannote/segmentation", dest="segmentation",
-                        help="Segmentation model")
+                        help="Segmentation model [Default: %(default)s]")
     parser.add_argument("--epochs", default=50, dest="epochs", type=int, help="Number of epochs [Default: %(default)s]")
-    parser.add_argument("--optim-steps", default=None, type=int, dest="optim_steps", help="optimization steps")
-    parser.add_argument("--model-duration", default=None, type=int, dest="model_duration", help="model duration")
+    parser.add_argument("--optim-steps", default=None, type=int, dest="optim_steps",
+                        help="optimization steps [Default: %(default)s]")
+    parser.add_argument("--model-duration", default=None, type=int, dest="model_duration",
+                        help="model duration [Default: %(default)s]")
     parser.add_argument("--num-workers", default=ceil(cpu_count() / 2), type=int, dest="num_workers",
                         help="Amount of training workers [Default: %(default)s]")
     parser.add_argument("--batch-size", default=32, type=int, dest="batch_size",
