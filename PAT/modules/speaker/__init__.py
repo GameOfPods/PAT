@@ -30,9 +30,19 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 import json
 import logging
-from typing import Dict, Any, Optional, Tuple, Callable, Union
+from typing import Dict, Any, Optional, Tuple, Callable, Union, List
 
 from PAT.modules import Module
 
@@ -52,7 +62,7 @@ class SpeakerDetectionModule(Module):
             import torchaudio
             _ = torchaudio.load(file)
             return True
-        except (ImportError, KeyError) as e:
+        except (ImportError, KeyError, RuntimeError) as e:
             logging.error(e)
             return False
 
@@ -60,8 +70,9 @@ class SpeakerDetectionModule(Module):
     def description(cls) -> str:
         return "Module that analyzes speaker information from podcast files. Accepts files loadable by torchaudio"
 
-    def process(self):
+    def process(self) -> Union[Tuple[Dict[str, Any], List[Tuple[str, bytes]]], Dict[str, Any]]:
         import os
+        from io import StringIO
         from time import perf_counter
         from datetime import timedelta
         from collections import defaultdict
@@ -71,6 +82,8 @@ class SpeakerDetectionModule(Module):
         from pydub import AudioSegment
 
         waveform, sample_rate = torchaudio.load(self.file)
+        duration_seconds = waveform.shape[-1] / sample_rate
+        self._LOGGER.info(f"Audio is {timedelta(seconds=duration_seconds)} long. Samplerate is {sample_rate}")
 
         with ProgressHook() as hook:
             data = {"waveform": waveform, "sample_rate": sample_rate}
@@ -82,19 +95,36 @@ class SpeakerDetectionModule(Module):
             self._LOGGER.info(f"Diarization took {timedelta(seconds=t2 - t1)}")
 
         song = AudioSegment.from_file(self.file)
-        speaker_counts = defaultdict(lambda: 0)
+        speaker_segments = defaultdict(lambda: [])
 
         for segment, segment_id, label in diarization.itertracks(yield_label=True):
             segment: Segment
-            speaker_counts[label] += 1
-            song[segment.start * 1000:segment.end * 1000].export(
-                os.path.join("G:\\tmp", f"{label}-{speaker_counts[label]}.mp3")
-            )
+            speaker_segments[label].append((segment.start, segment.end))
+            if False:
+                song[segment.start * 1000:segment.end * 1000].export(
+                    os.path.join("G:\\tmp", f"{label}-{len(speaker_segments[label])}.mp3")
+                )
 
+        speaker_counts = {k: len(v) for k, v in speaker_segments.items()}
+        speaker_durations = {k: sum(v) for k, v in
+                             ((k2, [v2e - v2s for v2s, v2e in v2]) for k2, v2 in speaker_segments.items())}
         self._LOGGER.info(
-            f"Speaker presence: {', '.join(str(x) for x in sorted(speaker_counts.items(), key=lambda x: x[::-1], reverse=True))}")
+            f"Speaker presence: {', '.join(str(x) for x in sorted(speaker_counts.items(), key=lambda x: x[::-1], reverse=True))}"
+        )
+        self._LOGGER.info(
+            f"Speaker duration: {', '.join(str(x) for x in sorted(speaker_durations.items(), key=lambda x: x[::-1], reverse=True))}"
+        )
 
-        exit(1)
+        rttm_file = StringIO()
+        diarization.write_rttm(rttm_file)
+        rttm_file.seek(0)
+
+        return {
+            "duration": duration_seconds,
+            "sample_rate": sample_rate,
+            "speaker_counts": speaker_counts,
+            "speaker_durations": speaker_durations,
+        }, [("speaker.rttm", rttm_file.read().encode("utf-8"))]
 
     @classmethod
     def load(cls, config: Dict[str, Any]):

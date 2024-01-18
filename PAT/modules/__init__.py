@@ -40,10 +40,20 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Tuple, Dict, Union
+from typing import Any, Callable, Tuple, Dict, Union, List
 
 
 class Module(ABC):
@@ -69,7 +79,7 @@ class Module(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def process(self):
+    def process(self) -> Union[Tuple[Dict[str, Any], List[Tuple[str, bytes]]], Dict[str, Any]]:
         pass
 
     @classmethod

@@ -20,20 +20,64 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 
+import json
 import logging
 import re
 from collections import defaultdict, Counter
+from typing import Tuple, Dict, Any, List, Union, Set, Callable
 
 from .. import Module
 
 
 class BookModule(Module):
-
     _LOGGER = logging.getLogger("BookModule")
     _SPECIAL_CHAPTERS = {"prologue", "introduction", "epilogue", "prolog", "epilog"}
+    _BOOK_VALID_CHAPTERS: Dict[str, Set[str]] = defaultdict(lambda: set())
+    _CHAPTER_NUMBER_REGEX = {re.compile(r"chapter \d+$"), re.compile(r"kapitel \d+$")}
 
     _SPACY_MODELS = {"en": "en_core_web_trf", "de": "de_core_news_lg"}
+
+    def _chapter_valid(self, chapter_name: str, chapter_counter: Dict[str, int]) -> bool:
+        if len(self._BOOK_VALID_CHAPTERS[self._book.title]) > 0:
+            return chapter_name in self._BOOK_VALID_CHAPTERS[self._book.title]
+        if chapter_name.isnumeric():
+            return True
+        if chapter_counter.get(chapter_name, 0) > 0 or chapter_counter.get(chapter_name.lower(), 0) > 0:
+            return True
+        if chapter_name in self._SPECIAL_CHAPTERS or chapter_name.lower() in self._SPECIAL_CHAPTERS:
+            return True
+        if any(x.fullmatch(chapter_name.lower()) for x in self._CHAPTER_NUMBER_REGEX):
+            return True
+        return False
+
+    @classmethod
+    def config_keys(cls) -> Dict[str, Tuple[Callable[[str], Any], bool, str, Union[None, str, int]]]:
+        return {
+            "chapter_infos": (str, False, "json file that contains chapter information. "
+                                          "Format should be {'book title': [list, of, chapters]}", None)
+        }
+
+    @classmethod
+    def load(cls, config: Dict[str, Any]):
+        super().load(config)
+        if "chapter_infos" in config and config["chapter_infos"] is not None:
+            with open(config["chapter_infos"]) as f_in:
+                chapter_info = json.load(f_in)
+            for k, v in chapter_info.items():
+                cls._BOOK_VALID_CHAPTERS[k] = set(v)
+                cls._LOGGER.info(f"Set valid chapters for '{k}' to {cls._BOOK_VALID_CHAPTERS[k]} "
+                                 f"from '{config['chapter_infos']}'")
 
     def __init__(self, file: str):
         super().__init__(file)
@@ -44,6 +88,7 @@ class BookModule(Module):
         from spacy_download import load_spacy
 
         book = epub.read_epub(self.file, options={"ignore_ncx": True})
+        self._book = book
         self._LOGGER.info(f"Read book \"{book.title}\"")
         nav = list(book.get_items_of_type(ITEM_NAVIGATION))[0].get_content().decode()
         items = sorted((x for x in book.get_items_of_type(ITEM_DOCUMENT) if x.get_name() in nav),
@@ -59,7 +104,8 @@ class BookModule(Module):
             self._chapters.append((headings[0], story))
 
         heading_c = Counter(x[0] for x in self._chapters)
-        self._valid_chapters = set(k for k, v in heading_c.items() if v > 1 or k.isnumeric() or k.lower() in self._SPECIAL_CHAPTERS)
+        self._valid_chapters = set(
+            k for k, v in heading_c.items() if v > 1 or k.isnumeric() or k.lower() in self._SPECIAL_CHAPTERS)
         self._invalid_chapters = set(heading_c.keys()) - self._valid_chapters
         self._LOGGER.info(f"Valid chapters: {', '.join(self._valid_chapters)}; "
                           f"Invalid chapters: {', '.join(self._invalid_chapters)}")
@@ -92,7 +138,7 @@ class BookModule(Module):
     def description(cls) -> str:
         return f"Module that analyzes book data from provided epub files"
 
-    def process(self):
+    def process(self) -> Union[Tuple[Dict[str, Any], List[Tuple[str, bytes]]], Dict[str, Any]]:
 
         try:
             from roman import toRoman
@@ -104,21 +150,24 @@ class BookModule(Module):
 
         _ = self.get_ner_pipeline()
 
-        infos = []
+        chapter_infos = []
 
         _name_counter = defaultdict(lambda: 0)
         _over_all_counter = Counter(x for x, *_ in self._chapters)
 
-        with tqdm(self._chapters, desc="Processing chapters", leave=False, unit="c") as pb:
-            for chapter_title, chapter_content in pb:
+        with tqdm(enumerate(self._chapters), total=len(self._chapters), desc="Processing chapters", leave=False,
+                  unit="c") as pb:
+            for i, (chapter_title, chapter_content) in pb:
                 pb.set_description(f"Processing {chapter_title}")
                 _name_counter[chapter_title] += 1
                 _title_extension = toRoman(_name_counter[chapter_title]) if _over_all_counter[chapter_title] > 1 else ''
                 chapter_info = {
+                    "chapter_idx": i,
                     "chapter_title": chapter_title,
                     "chapter_title_ext": f"{chapter_title}{f' {_title_extension}' if len(_title_extension) else ''}",
                     "chapter_content": chapter_content
                 }
+                pb.set_description(f"Processing {chapter_info['chapter_title_ext']}")
                 text = "\n".join(chapter_content).strip()
                 doc = self._nlp(text)
 
@@ -130,40 +179,17 @@ class BookModule(Module):
                 for ent in doc.ents:
                     lbl = ent.label_.lower()
                     lbl = {"per": "person"}.get(lbl, lbl)
-                    ent_identifier = " ".join(x.capitalize() for x in ent.text.split(" ")) if lbl == "person" else ent.lemma_
+                    ent_identifier = " ".join(
+                        x.capitalize() for x in ent.text.split(" ")) if lbl == "person" else ent.lemma_
                     chapter_info["entities"][lbl][ent_identifier] += 1
 
-                infos.append(chapter_info)
+                chapter_infos.append(chapter_info)
 
-        print("Chapter hard facts:")
-        for info in infos:
-            print(f"  {info['chapter_title_ext']} -> Sentences: {info['sentence_count']}; Words: {len(info['words'])}; Most common words: {info['word_count'].most_common(5)}")
-
-        print("Most words:         ", sorted(((x['chapter_title_ext'], len(x['words'])) for x in infos), key=lambda x: -x[1])[:5])
-        print("Most sentences:     ", sorted(((x['chapter_title_ext'], x['sentence_count']) for x in infos), key=lambda x: -x[1])[:5])
-        print("Most words/sentence:", sorted(((x['chapter_title_ext'], len(x['words'])/x['sentence_count']) for x in infos), key=lambda x: -x[1])[:5])
-
-        pov_words, pov_sentences, pov_words_per_sentence = Counter(), Counter(), defaultdict(list)
-        for info in infos:
-            pov_words[info['chapter_title']] += len(info['words'])
-            pov_sentences[info['chapter_title']] += info['sentence_count']
-            pov_words_per_sentence[info['chapter_title']].append(len(info['words'])/info['sentence_count'])
-
-        print("POV verbosity:")
-        for pov, pov_count in sorted(_name_counter.items(), key=lambda x: x[::-1], reverse=True):
-            print(f"  {pov:{max(len(x) for x in _name_counter.keys())}}: {pov_count} chapters; Words: {pov_words[pov]/pov_count:.2f}/{pov_words[pov]}; Sentences: {pov_sentences[pov]/pov_count:.2f}/{pov_sentences[pov]}; Words per sentence: {sum(pov_words_per_sentence[pov])/len(pov_words_per_sentence[pov]):.2f}")
-
-        person_collection = Counter()
-        chapter_person_collection = defaultdict(Counter)
-        for info in infos:
-            person_collection.update(info["entities"]["person"])
-            chapter_person_collection[info["chapter_title"]].update(info["entities"]["person"])
-
-        print("Most common persons:", person_collection.most_common(10))
-
-        print("Most common persons per POV:")
-        for pov, counter in chapter_person_collection.items():
-            print(f"  {pov}: {counter.most_common(10)}")
+        return {
+            "book": self._book.title,
+            "language": self._lang,
+            "chapters": chapter_infos
+        }
 
     def get_ner_pipeline(self):
         if "ner" in self._nlp.pipe_names:
@@ -171,4 +197,3 @@ class BookModule(Module):
         config = {}
         r = self._nlp.add_pipe("ner", name="ner", config=config)
         return r
-
