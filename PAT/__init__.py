@@ -40,6 +40,16 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 
 import os
 
@@ -52,7 +62,8 @@ del os
 # noinspection PyUnresolvedReferences
 from PAT.modules import *
 
-_sub_mods = [x.name() for x in Module.__subclasses__()]
+# noinspection DuplicatedCode
+_sub_mods = [x.name() for x in PATModule.__subclasses__()]
 _one_doubled = False
 
 for _i, _mod in enumerate(_sub_mods):

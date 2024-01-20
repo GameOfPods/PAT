@@ -40,14 +40,24 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 import json
 import logging
 from typing import Dict, Any, Optional, Tuple, Callable, Union, List
 
-from PAT.modules import Module
+from PAT.modules import PATModule
 
 
-class SpeakerDetectionModule(Module):
+class SpeakerDetectionModule(PATModule):
     _LOGGER = logging.getLogger("SpeakerDetectionModule")
     _PIPELINE = None
 
@@ -88,7 +98,7 @@ class SpeakerDetectionModule(Module):
         with ProgressHook() as hook:
             data = {"waveform": waveform, "sample_rate": sample_rate}
             num_speakers = int(os.environ["SPEAKER_COUNT"]) if "SPEAKER_COUNT" in os.environ else None
-            self._LOGGER.debug(f"Running pipeline on {self.file} for {num_speakers} speakers")
+            self._LOGGER.info(f"Running pipeline on {self.file} for {num_speakers} speakers")
             t1 = perf_counter()
             diarization: Annotation = self.__class__._PIPELINE(data, hook=hook, num_speakers=num_speakers)
             t2 = perf_counter()
@@ -174,5 +184,8 @@ class SpeakerDetectionModule(Module):
     def unload(cls):
         super().unload()
         if cls._PIPELINE is not None:
-            cls._PIPELINE.unregister()
+            try:
+                cls._PIPELINE.unregister()
+            except AttributeError:
+                pass
             del cls._PIPELINE

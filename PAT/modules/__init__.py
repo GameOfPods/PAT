@@ -50,13 +50,26 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 
 import os
+import typing as t
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Tuple, Dict, Union, List
+
+from PAT.utis import NameAndDescription
+from PAT.utis.cliconfig import CLIConfig
 
 
-class Module(ABC):
+class PATModule(CLIConfig, NameAndDescription, ABC):
     def __init__(self, file: str):
         self._file = file
 
@@ -65,39 +78,17 @@ class Module(ABC):
         return self._file
 
     @classmethod
-    def name(cls):
-        return cls.__name__
-
-    @classmethod
-    @abstractmethod
-    def description(cls):
-        raise NotImplementedError()
-
-    @classmethod
     @abstractmethod
     def supports_file(cls, file: str) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
-    def process(self) -> Union[Tuple[Dict[str, Any], List[Tuple[str, bytes]]], Dict[str, Any]]:
+    def process(self) -> t.Union[t.Tuple[t.Dict[str, t.Any], t.List[t.Tuple[str, bytes]]], t.Dict[str, t.Any]]:
         pass
 
-    @classmethod
-    def load(cls, config: Dict[str, Any]):
-        print(f"First run of {cls.name()}")
-        pass
 
-    @classmethod
-    def unload(cls):
-        print(f"No run of {cls.name()} anymore")
-        pass
-
-    @classmethod
-    def config_keys(cls) -> Dict[str, Tuple[Callable[[str], Any], bool, str, Union[None, str, int]]]:
-        return dict()
-
-
-__all__ = ["Module"]
+__all__ = ["PATModule"]
+# noinspection DuplicatedCode
 _my_path = os.path.dirname(__file__)
 for f in os.listdir(_my_path):
     full_path = os.path.join(_my_path, f)
@@ -110,4 +101,4 @@ for f in os.listdir(_my_path):
             print(f"Already found module {f}")
         __all__.append(f[:-3])
 
-del os, ABC, abstractmethod
+del os, ABC, abstractmethod, t, _my_path, full_path

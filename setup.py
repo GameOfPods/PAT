@@ -1,5 +1,19 @@
-import setuptools
+#  PAT - Toolkit to analyze podcast audio and topics talked about in the podcast. For example Books
+#  Copyright (c) 2024.  RedRem95
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+
 import os
+
+import setuptools
 
 with open(os.path.join(os.path.dirname(__file__), "PAT", "version.txt"), "r", encoding="utf-8") as fv:
     __version__ = fv.read().strip()
@@ -44,9 +58,10 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'PAT = PAT.__main__:main',
+            'PAT-Visualizer = PAT_Visualizer.__main__:main'
         ],
     },
-    packages=setuptools.find_packages(include=['PAT', 'PAT.*']),
+    packages=setuptools.find_packages(include=['PAT', 'PAT.*', 'PAT_Visualizer', 'PAT_Visualizer.*']),
     python_requires=">=3.7",
     install_requires=requirements,
     dependency_links=extra_dependency_links + ['https://pypi.example.org/pypi/somedep/'],

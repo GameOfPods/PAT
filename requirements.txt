@@ -1,5 +1,6 @@
 --extra-index-url https://download.pytorch.org/whl/cu118
 
+ordered-set
 numpy
 requests
 tqdm
@@ -9,6 +10,7 @@ beautifulsoup4
 EbookLib
 pyyaml
 scikit-learn
+XlsxWriter
 
 torch
 torchvision

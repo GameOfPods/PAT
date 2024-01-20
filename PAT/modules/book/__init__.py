@@ -30,6 +30,16 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 
 import json
 import logging
@@ -37,10 +47,10 @@ import re
 from collections import defaultdict, Counter
 from typing import Tuple, Dict, Any, List, Union, Set, Callable
 
-from .. import Module
+from .. import PATModule
 
 
-class BookModule(Module):
+class BookModule(PATModule):
     _LOGGER = logging.getLogger("BookModule")
     _SPECIAL_CHAPTERS = {"prologue", "introduction", "epilogue", "prolog", "epilog"}
     _BOOK_VALID_CHAPTERS: Dict[str, Set[str]] = defaultdict(lambda: set())
@@ -171,9 +181,16 @@ class BookModule(Module):
                 text = "\n".join(chapter_content).strip()
                 doc = self._nlp(text)
 
-                chapter_info["sentence_count"] = len(list(doc.sents))
-                chapter_info["words"] = [token.text for token in doc if not token.is_stop and not token.is_punct]
-                chapter_info["word_count"] = Counter(chapter_info["words"])
+                chapter_info["words_per_sentence"] = [
+                    Counter(x.text for x in sent if not any([x.is_space, x.is_punct])) for sent in doc.sents
+                ]
+                chapter_info["words"] = Counter([x.text for x in doc if not any([x.is_space, x.is_punct])])
+
+                chapter_info["words_per_sentence_no_stop"] = [
+                    Counter(x.text for x in sent if not any([x.is_space, x.is_punct, x.is_stop])) for sent in doc.sents
+                ]
+                chapter_info["words_no_stop"] = Counter(
+                    [x.text for x in doc if not any([x.is_space, x.is_punct, x.is_stop])])
                 chapter_info["entities"] = defaultdict(Counter)
 
                 for ent in doc.ents:
