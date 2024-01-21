@@ -13,6 +13,7 @@ __author__ = 'RedRem95'
 
 # noinspection PyUnresolvedReferences
 from PAT_Visualizer.modules import *
+from PAT import __version__, PATModule
 
 # noinspection DuplicatedCode
 _sub_mods = [x.name() for x in VisualizerModule.__subclasses__()]
@@ -27,3 +28,5 @@ if _one_doubled:
     exit(1)
 
 del _i, _mod, _sub_mods, _one_doubled
+
+__all__ = ["PATModule", "VisualizerModule", "__version__"]
