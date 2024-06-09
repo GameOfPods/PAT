@@ -9,13 +9,15 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 
+
 import json
 import logging
+import os
 import re
 from collections import defaultdict, Counter
-from typing import Tuple, Dict, Any, List, Union, Set, Callable
+from typing import Tuple, Dict, Any, List, Union, Set, Optional
 
-from .. import PATModule
+from PAT.modules import PATModule
 
 
 class BookModule(PATModule):
@@ -25,6 +27,8 @@ class BookModule(PATModule):
     _CHAPTER_NUMBER_REGEX = {re.compile(r"chapter \d+$"), re.compile(r"kapitel \d+$")}
 
     _SPACY_MODELS = {"en": "en_core_web_trf", "de": "de_core_news_lg"}
+
+    _SUMMARIZE_MODEL: Optional[str] = None
 
     def _chapter_valid(self, chapter_name: str, chapter_counter: Dict[str, int]) -> bool:
         if len(self._BOOK_VALID_CHAPTERS[self._book.title]) > 0:
@@ -40,10 +44,17 @@ class BookModule(PATModule):
         return False
 
     @classmethod
-    def config_keys(cls) -> Dict[str, Tuple[Callable[[str], Any], bool, str, Union[None, str, int]]]:
+    def config_keys(cls) -> Dict[str, Dict[str, Any]]:
         return {
-            "chapter_infos": (str, False, "json file that contains chapter information. "
-                                          "Format should be {'book title': [list, of, chapters]}", None)
+            "chapter_infos": {
+                "type": str, "required": False, "default": None,
+                "help": "json file that contains chapter information. Format should be {'book title': [list, of, chapters]}"
+            },
+            "book_summarize_model": {
+                "type": str, "required": False, "default": None,
+                "help": f"OpenAI model to use to summarize book content. "
+                        f"If not provided no summarization will be performed. (Default: %(default)s)"
+            }
         }
 
     @classmethod
@@ -56,6 +67,7 @@ class BookModule(PATModule):
                 cls._BOOK_VALID_CHAPTERS[k] = set(v)
                 cls._LOGGER.info(f"Set valid chapters for '{k}' to {cls._BOOK_VALID_CHAPTERS[k]} "
                                  f"from '{config['chapter_infos']}'")
+        cls._SUMMARIZE_MODEL = config.get("book_summarize_model", None)
 
     def __init__(self, file: str):
         super().__init__(file)
@@ -161,6 +173,18 @@ class BookModule(PATModule):
                     [x.text for x in doc if not any([x.is_space, x.is_punct, x.is_stop])])
                 chapter_info["entities"] = defaultdict(Counter)
 
+                if self._SUMMARIZE_MODEL is not None:
+                    try:
+                        from PAT.utils.summerize import summarize, Templates
+                        chapter_info["summary"] = summarize(
+                            text=text,
+                            openai_model=self._SUMMARIZE_MODEL,
+                            language=self._lang,
+                            template=Templates.LANGCHAIN_DEFAULT,
+                        )
+                    except Exception as ignore:
+                        pass
+
                 for ent in doc.ents:
                     lbl = ent.label_.lower()
                     lbl = {"per": "person"}.get(lbl, lbl)
@@ -170,11 +194,29 @@ class BookModule(PATModule):
 
                 chapter_infos.append(chapter_info)
 
-        return {
+        ret = {
             "book": self._book.title,
             "language": self._lang,
             "chapters": chapter_infos
         }
+
+        if self._SUMMARIZE_MODEL is not None:
+            try:
+                from PAT.utils.summerize import summarize, Templates
+                self._LOGGER.info("Creating summary of whole book")
+                text_f = "\n\n".join(
+                    f"{x['chapter_title']}\n\n{os.linesep.join(x['chapter_content'])}" for x in chapter_infos
+                )
+                ret["summary"] = summarize(
+                    text=text_f,
+                    openai_model=self._SUMMARIZE_MODEL,
+                    language=self._lang,
+                    template=Templates.LANGCHAIN_DEFAULT,
+                )
+            except Exception as ignore:
+                pass
+
+        return ret
 
     def get_ner_pipeline(self):
         if "ner" in self._nlp.pipe_names:

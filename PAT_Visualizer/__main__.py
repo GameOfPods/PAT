@@ -23,7 +23,7 @@ def main():
     from datetime import datetime
 
     from PAT_Visualizer import VisualizerModule, __version__
-    from PAT.utis.cliconfig import CLIConfig
+    from PAT.utils.cliconfig import CLIConfig
 
     # noinspection DuplicatedCode
     sub_classes = sorted((x.name(), x.description(), x) for x in VisualizerModule.__subclasses__())

@@ -81,7 +81,7 @@ class SpeakerVisualizer(VisualizerModule):
             from datetime import timedelta
 
             import xlsxwriter
-            from PAT.utis import create_table
+            from PAT.utils import create_table
 
             def mean(_i):
                 if len(_i) >= 1:

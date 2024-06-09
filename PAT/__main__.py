@@ -21,7 +21,7 @@ from time import perf_counter
 from typing import List, Tuple, Type, Optional
 
 from PAT import PATModule, __version__
-from PAT.utis.cliconfig import CLIConfig
+from PAT.utils.cliconfig import CLIConfig
 
 
 def main():

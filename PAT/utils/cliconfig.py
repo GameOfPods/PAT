@@ -13,12 +13,12 @@ import typing as t
 from abc import ABC
 from argparse import ArgumentParser, Namespace
 
-from . import NameAndDescription
+from PAT.utils import NameAndDescription
 
 
 class CLIConfig(NameAndDescription, ABC):
     @classmethod
-    def config_keys(cls) -> t.Dict[str, t.Tuple[t.Callable[[str], t.Any], bool, str, t.Union[None, str, int]]]:
+    def config_keys(cls) -> t.Dict[str, t.Dict[str, t.Any]]:
         return dict()
 
     @classmethod
@@ -37,11 +37,10 @@ class CLIConfig(NameAndDescription, ABC):
     def add_config_to_parser(cls, parser: ArgumentParser, subclasses: t.Iterable[t.Type["CLIConfig"]]):
         for sc_class in subclasses:
             sc_name = sc_class.name()
-            for arg, (tpe, required, hlp, nargs) in sc_class.config_keys().items():
+            for arg, argument_arguments in sc_class.config_keys().items():
                 arg_name = f"{sc_name}__{arg}"
                 parser.add_argument(
-                    f"--{arg_name}", dest=arg_name, type=tpe, metavar=arg.upper(),
-                    help=hlp, required=required, nargs=nargs,
+                    f"--{arg_name}", dest=arg_name, metavar=arg.upper(), **argument_arguments
                 )
 
     @classmethod

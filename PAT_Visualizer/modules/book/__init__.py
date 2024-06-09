@@ -13,7 +13,7 @@ import typing as t
 from collections import Counter, defaultdict
 
 from PAT import PATModule
-from PAT.utis import create_table, super_format, counter_union
+from PAT.utils import create_table, super_format, counter_union
 from PAT_Visualizer.modules import VisualizerModule
 
 

@@ -8,26 +8,7 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+
 
 import os
 
@@ -46,6 +27,12 @@ with open("requirements.txt", "r", encoding="utf-8") as fr:
         if line.startswith("--extra-index-url"):
             extra_dependency_links.append(line[len("--extra-index-url"):].strip())
         else:
+            if line.startswith("git+"):
+                if "#egg=" in line:
+                    egg_name = line.split("#egg=")[-1]
+                else:
+                    egg_name = line.split("/")[-1].split(".git")[0]
+                line = f"{egg_name} @ {line}"
             requirements.append(line)
 
 print(requirements, extra_dependency_links)

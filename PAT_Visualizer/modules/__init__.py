@@ -14,8 +14,8 @@ import typing as t
 from abc import ABC, abstractmethod
 
 from PAT import PATModule
-from PAT.utis import NameAndDescription
-from PAT.utis.cliconfig import CLIConfig
+from PAT.utils import NameAndDescription
+from PAT.utils.cliconfig import CLIConfig
 
 
 class VisualizerModule(CLIConfig, NameAndDescription, ABC):

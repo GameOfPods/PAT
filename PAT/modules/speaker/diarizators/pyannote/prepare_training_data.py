@@ -29,7 +29,7 @@ def main(
     from pydub import AudioSegment
     from sklearn.model_selection import train_test_split
 
-    from PAT.modules.speaker.prepare_rttm import RTTM_LINE
+    from modules.speaker.diarizators.pyannote.prepare_rttm import RTTM_LINE
 
     @lru_cache
     def get_audio_segment(_full_path: str) -> AudioSegment:

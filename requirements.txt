@@ -17,6 +17,16 @@ torchvision
 torchaudio
 pyannote.audio
 audiosegment
+demucs
+nemo_toolkit[asr]==1.23.0
+pydub
+omegaconf
+rttm-manager
+git+https://github.com/m-bain/whisperX.git#egg=whisperx
+git+https://github.com/oliverguhr/deepmultilingualpunctuation.git#egg=deepmultilingualpunctuation
+langchain
+langchain-openai
+deep-translator
 
 spacy
 spacy-transformers

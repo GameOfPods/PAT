@@ -86,6 +86,6 @@ def super_format(value, format_strs: t.Dict[t.Type, str]) -> str:
 
 del ABC, abstractmethod, t, Counter, Worksheet
 
-from .cliconfig import CLIConfig
+from PAT.utils.cliconfig import CLIConfig
 
 __all__ = ['NameAndDescription', 'CLIConfig', "create_table"]
