@@ -17,9 +17,9 @@ torchvision
 torchaudio
 pyannote.audio
 audiosegment
-silero_vad
+silero-vad
 demucs
-nemo_toolkit[asr]==1.23.0
+nemo-toolkit[asr]==1.23.0
 pydub
 librosa
 omegaconf
