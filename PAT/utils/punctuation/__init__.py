@@ -13,10 +13,15 @@ def restore_punctuation(text: str, model: str = "kredor/punctuate-all"):
     import logging
     try:
         from deepmultilingualpunctuation import PunctuationModel
-
-        model = PunctuationModel(model=model)
-        prediction = model.restore_punctuation(text=text)
-        return prediction
+        try:
+            model = PunctuationModel(model=model)
+            prediction = model.restore_punctuation(text=text)
+            return prediction
+        except Exception as e:
+            logging.getLogger(__name__).error(f"Punctuation model failed: {e}")
+            return text
+        finally:
+            del model
     except ImportError as e:
-        logging.getLogger(__name__).exception("Punctuation requirements not met. Check requirements", exc_info=e)
+        logging.getLogger(__name__).error("Punctuation requirements not met. Check requirements")
         return text

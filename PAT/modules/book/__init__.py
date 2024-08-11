@@ -18,6 +18,7 @@ from collections import defaultdict, Counter
 from typing import Tuple, Dict, Any, List, Union, Set, Optional
 
 from PAT.modules import PATModule
+from PAT.utils.summerize import LLM as LLMService
 
 
 class BookModule(PATModule):
@@ -29,6 +30,7 @@ class BookModule(PATModule):
     _SPACY_MODELS = {"en": "en_core_web_trf", "de": "de_core_news_lg"}
 
     _SUMMARIZE_MODEL: Optional[str] = None
+    _SUMMARIZE_SERVICE: Optional[LLMService] = None
 
     def _chapter_valid(self, chapter_name: str, chapter_counter: Dict[str, int]) -> bool:
         if len(self._BOOK_VALID_CHAPTERS[self._book.title]) > 0:
@@ -54,6 +56,11 @@ class BookModule(PATModule):
                 "type": str, "required": False, "default": None,
                 "help": f"OpenAI model to use to summarize book content. "
                         f"If not provided no summarization will be performed. (Default: %(default)s)"
+            },
+            "book_summarize_service": {
+                "type": str, "choices": [x.name for x in LLMService], "required": False,
+                "default": LLMService.OpenAI.name,
+                "help": f"Service to use for summarization tasks. Choices: %(choices)s. (Default: %(default)s)"
             }
         }
 
@@ -68,6 +75,13 @@ class BookModule(PATModule):
                 cls._LOGGER.info(f"Set valid chapters for '{k}' to {cls._BOOK_VALID_CHAPTERS[k]} "
                                  f"from '{config['chapter_infos']}'")
         cls._SUMMARIZE_MODEL = config.get("book_summarize_model", None)
+        if "book_summarize_service" in config:
+            try:
+                cls._SUMMARIZE_SERVICE = [x for x in LLMService if x.name == config["book_summarize_service"]][0]
+            except IndexError:
+                cls._LOGGER.error(
+                    f"Could not find Summarization LLM service with name {config['book_summarize_service']}"
+                )
 
     def __init__(self, file: str):
         super().__init__(file)
@@ -173,14 +187,15 @@ class BookModule(PATModule):
                     [x.text for x in doc if not any([x.is_space, x.is_punct, x.is_stop])])
                 chapter_info["entities"] = defaultdict(Counter)
 
-                if self._SUMMARIZE_MODEL is not None:
+                if self._SUMMARIZE_SERVICE is not None and self._SUMMARIZE_MODEL is not None:
                     try:
                         from PAT.utils.summerize import summarize, Templates
                         chapter_info["summary"] = summarize(
                             text=text,
-                            openai_model=self._SUMMARIZE_MODEL,
-                            language=self._lang,
+                            model=self._SUMMARIZE_MODEL,
+                            lang=self._lang,
                             template=Templates.LANGCHAIN_DEFAULT,
+                            llm=self._SUMMARIZE_SERVICE,
                         )
                     except Exception as ignore:
                         pass
@@ -200,7 +215,7 @@ class BookModule(PATModule):
             "chapters": chapter_infos
         }
 
-        if self._SUMMARIZE_MODEL is not None:
+        if self._SUMMARIZE_SERVICE is not None and self._SUMMARIZE_MODEL is not None:
             try:
                 from PAT.utils.summerize import summarize, Templates
                 self._LOGGER.info("Creating summary of whole book")
@@ -209,9 +224,10 @@ class BookModule(PATModule):
                 )
                 ret["summary"] = summarize(
                     text=text_f,
-                    openai_model=self._SUMMARIZE_MODEL,
-                    language=self._lang,
+                    model=self._SUMMARIZE_MODEL,
+                    lang=self._lang,
                     template=Templates.LANGCHAIN_DEFAULT,
+                    llm=self._SUMMARIZE_SERVICE,
                 )
             except Exception as ignore:
                 pass

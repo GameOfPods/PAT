@@ -113,6 +113,58 @@ PAT-Visualizer -h
 - Create full documentation (readthedocs or similar)
 - Improve mapping of words to speaker. Sometimes very buggy
 - Seperate requirements by modules. Utilize extras requires from setuptools?
-- Do speaker mapping using voice markers for each speaker by providing samples
-   - Mel-frequency cepstral coefficients
-- Look into summarization task and improve prompts
+
+## History
+
+- **0.0.3**
+  - Implemented Speaker Identification using audio snippets cut using a VAD and then matching
+    with [MFCC](https://librosa.org/doc/main/generated/librosa.feature.mfcc.html)
+
+## Libraries
+
+- [numpy](https://numpy.org/)
+- [requests](https://requests.readthedocs.io/en/latest/) - Apache-2.0
+- [tqdm](https://github.com/tqdm/tqdm) - [License](https://github.com/tqdm/tqdm/blob/master/LICENCE)
+- [psutil](https://github.com/giampaolo/psutil) - [BSD 3](https://github.com/giampaolo/psutil/blob/master/LICENSE)
+- [roman](https://github.com/zopefoundation/roman) - [Zope Public License](https://github.com/zopefoundation/roman/blob/master/LICENSE.txt)
+- [bs4](https://www.crummy.com/software/BeautifulSoup/) - MIT License
+- [EbookLib](https://github.com/aerkalov/ebooklib) - [AGPL-3.0](https://github.com/aerkalov/ebooklib/blob/master/LICENSE.txt)
+- [pyyaml](https://pyyaml.org/) - MIT License
+- [scikit-learn](https://scikit-learn.org/stable/) - BSD License
+- [XlsxWriter](https://github.com/jmcnamara/XlsxWriter) - BSD License
+- [torch](https://pytorch.org/) - BSD License
+- [pyannote.audio](https://github.com/pyannote/pyannote-audio) - MIT License
+- [audiosegment](https://github.com/MaxStrange/AudioSegment) - MIT License
+- [silero-vad](https://github.com/snakers4/silero-vad) - MIT License
+- [demucs](https://github.com/facebookresearch/demucs) - MIT License
+- [nemo_toolkit](https://github.com/nvidia/nemo) - [Apache-2.0](https://github.com/NVIDIA/NeMo/blob/main/LICENSE)
+- [pydub](http://pydub.com/) - MIT License
+- [librosa](https://librosa.org/) - ISC License
+- [omegaconf](https://github.com/omry/omegaconf) - BSD License
+- [rttm-manager](https://pypi.org/project/rttm-manager/)
+- [whisperX](https://github.com/m-bain/whisperx) - MIT License
+- [deepmultilingualpunctuation](https://github.com/oliverguhr/deepmultilingualpunctuation) - MIT License
+- [langchain](https://github.com/langchain-ai/langchain) - MIT License
+- [deep-translator](https://github.com/nidhaloff/deep_translator) - MIT License
+- [spacy](https://spacy.io/) - MIT License
+- [langdetect](https://github.com/Mimino666/langdetect) - [Apache-2.0](https://github.com/Mimino666/langdetect/blob/master/LICENSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
