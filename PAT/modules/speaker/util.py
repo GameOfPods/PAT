@@ -21,9 +21,9 @@ def word_speaker_match(word, speaker) -> float:
     common_end = min(word.end, speaker.turn_onset + speaker.turn_duration)
     if common_start == common_end:
         return 0
-    return (word.end - word.start) / (common_end - common_start)
+    return (common_end - common_start) / (word.end - word.start)
 
 
 def best_word_speaker_match(word, speakers: List) -> List:
     # TODO: Optimize
-    return sorted(speakers, key=lambda x: (word_speaker_match(word, x), -x.turn_onset), reverse=True)
+    return sorted(speakers, key=lambda x: (word_speaker_match(word, x), x.turn_onset), reverse=True)

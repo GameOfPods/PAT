@@ -17,9 +17,11 @@ torchvision
 torchaudio
 pyannote.audio
 audiosegment
+silero_vad
 demucs
 nemo_toolkit[asr]==1.23.0
 pydub
+librosa
 omegaconf
 rttm-manager
 git+https://github.com/m-bain/whisperX.git#egg=whisperx

@@ -39,11 +39,13 @@ class LocalWhisperTranscriptor(Transcriptor):
         import torch
         import tqdm
         from faster_whisper import WhisperModel
+        from time import perf_counter
+        from datetime import timedelta
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        cls._LOGGER.info(f"Transcribing audio using Whisper and mode {model}. Selected language: {language}")
+        cls._LOGGER.info(f"Transcribing audio using Whisper and \"{model}\" model. Selected language: {language}")
         model = WhisperModel(
             model, device=device, compute_type=os.environ.get("WHISPER_COMPUTE_TYPE", cls._DEFAULT_TYPES[device])
         )
@@ -56,9 +58,12 @@ class LocalWhisperTranscriptor(Transcriptor):
         )
 
         segments_dictionary = []
+        t1 = perf_counter()
         for segment in tqdm.tqdm(segments, unit="segment", leave=False, desc="Transcribing"):
             segments_dictionary.append(segment._asdict())
-        cls._LOGGER.info(f"Transcribed audio using Whisper. Found {len(segments_dictionary)} segments in audio")
+        t2 = perf_counter()
+        cls._LOGGER.info(f"Transcribed audio using Whisper. "
+                         f"Found {len(segments_dictionary)} segments in audio, took {timedelta(seconds=t2 - t1)}")
 
         del model
         if device == "cuda" and torch.cuda.is_available():
@@ -73,6 +78,7 @@ class LocalWhisperTranscriptor(Transcriptor):
             ):
                 cls._LOGGER.info(f"Aligning words using WhisperX")
                 align_model, meta = whisperx.load_align_model(language_code=info.language, device=device)
+                t1 = perf_counter()
                 aligned = whisperx.align(
                     transcript=segments_dictionary,
                     model=align_model,
@@ -90,7 +96,9 @@ class LocalWhisperTranscriptor(Transcriptor):
                     init=segments_dictionary[0].get("start", None),
                     fin=segments_dictionary[-1].get("end", None),
                 )
-                cls._LOGGER.info(f"Aligned words using WhisperX. Found {len(word_timestamps)} timestamped words")
+                t2 = perf_counter()
+                cls._LOGGER.info(f"Aligned words using WhisperX. "
+                                 f"Found {len(word_timestamps)} timestamped words, took {timedelta(seconds=t2 - t1)}")
                 del align_model
                 if device == "cuda" and torch.cuda.is_available():
                     torch.cuda.empty_cache()
